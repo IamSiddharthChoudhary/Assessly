@@ -1,81 +1,90 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import { ArrowLeft, Calendar, Clock, ExternalLink, Edit } from "lucide-react"
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { ArrowLeft, Calendar, Clock, ExternalLink, Edit } from "lucide-react";
 
 interface InterviewDetailPageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{
+    id: string;
+  }>;
 }
 
-export default async function InterviewDetailPage({ params }: InterviewDetailPageProps) {
-  const supabase = await createClient()
+export default async function InterviewDetailPage({
+  params,
+}: InterviewDetailPageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.getUser()
+  const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
-    redirect("/auth/login")
+    redirect("/auth/login");
   }
 
-  // Get interview details
   const { data: interview } = await supabase
     .from("interviews")
-    .select(`
+    .select(
+      `
       *,
       interviewer:profiles!interviews_interviewer_id_fkey(full_name, email),
       candidate:profiles!interviews_candidate_id_fkey(full_name, email)
-    `)
-    .eq("id", params.id)
-    .single()
+    `
+    )
+    .eq("id", id)
+    .single();
 
   if (!interview) {
-    redirect("/dashboard/interviews")
+    redirect("/dashboard/interviews");
   }
 
-  // Check if user has access to this interview
   const hasAccess =
     interview.interviewer_id === data.user.id ||
     interview.candidate_id === data.user.id ||
-    interview.candidate_id === null
+    interview.candidate_id === null;
 
   if (!hasAccess) {
-    redirect("/dashboard/interviews")
+    redirect("/dashboard/interviews");
   }
 
-  // Get interview session data
   const { data: session } = await supabase
     .from("interview_sessions")
     .select("*")
     .eq("interview_id", interview.id)
-    .single()
+    .single();
 
-  // Get chat messages
   const { data: chatMessages } = await supabase
     .from("chat_messages")
-    .select(`
+    .select(
+      `
       *,
       profiles:sender_id (full_name, email)
-    `)
+    `
+    )
     .eq("interview_id", interview.id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: true });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800";
       case "in_progress":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800";
       case "scheduled":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800";
       case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,7 +100,9 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
                 </Link>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{interview.title}</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {interview.title}
+                </h1>
                 <p className="text-gray-600">Interview Details</p>
               </div>
             </div>
@@ -125,52 +136,77 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Interview Information</CardTitle>
-                  <Badge className={getStatusColor(interview.status)}>{interview.status.replace("_", " ")}</Badge>
+                  <Badge className={getStatusColor(interview.status)}>
+                    {interview.status.replace("_", " ")}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                  <p className="text-gray-600">{interview.description || "No description provided"}</p>
+                  <h4 className="font-medium text-gray-700 mb-1">
+                    Description
+                  </h4>
+                  <p className="text-gray-600">
+                    {interview.description || "No description provided"}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-1">Interviewer</h4>
-                    <p className="text-gray-600">{interview.interviewer?.full_name || interview.interviewer?.email}</p>
+                    <h4 className="font-medium text-gray-700 mb-1">
+                      Interviewer
+                    </h4>
+                    <p className="text-gray-600">
+                      {interview.interviewer?.full_name ||
+                        interview.interviewer?.email}
+                    </p>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-1">Candidate</h4>
+                    <h4 className="font-medium text-gray-700 mb-1">
+                      Candidate
+                    </h4>
                     <p className="text-gray-600">
-                      {interview.candidate?.full_name || interview.candidate?.email || "Not assigned"}
+                      {interview.candidate?.full_name ||
+                        interview.candidate?.email ||
+                        "Not assigned"}
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-1">Scheduled Date</h4>
+                    <h4 className="font-medium text-gray-700 mb-1">
+                      Scheduled Date
+                    </h4>
                     <p className="text-gray-600 flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleDateString() : "Not scheduled"}
+                      {interview.scheduled_at
+                        ? new Date(interview.scheduled_at).toLocaleDateString()
+                        : "Not scheduled"}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-700 mb-1">Time</h4>
                     <p className="text-gray-600 flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {interview.scheduled_at ? new Date(interview.scheduled_at).toLocaleTimeString() : "Not scheduled"}
+                      {interview.scheduled_at
+                        ? new Date(interview.scheduled_at).toLocaleTimeString()
+                        : "Not scheduled"}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-700 mb-1">Duration</h4>
-                    <p className="text-gray-600">{interview.duration_minutes} minutes</p>
+                    <p className="text-gray-600">
+                      {interview.duration_minutes} minutes
+                    </p>
                   </div>
                 </div>
 
                 <div>
                   <h4 className="font-medium text-gray-700 mb-1">Room ID</h4>
-                  <p className="text-gray-600 font-mono text-sm bg-gray-100 px-2 py-1 rounded">{interview.room_id}</p>
+                  <p className="text-gray-600 font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                    {interview.room_id}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -180,11 +216,15 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
               <Card>
                 <CardHeader>
                   <CardTitle>Session Data</CardTitle>
-                  <CardDescription>Code and notes from the interview session</CardDescription>
+                  <CardDescription>
+                    Code and notes from the interview session
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Code ({session.language})</h4>
+                    <h4 className="font-medium text-gray-700 mb-2">
+                      Code ({session.language})
+                    </h4>
                     <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-auto max-h-60">
                       {session.code_content || "No code written"}
                     </pre>
@@ -194,7 +234,9 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Notes</h4>
                       <div className="bg-gray-50 p-4 rounded-lg">
-                        <p className="text-gray-600 whitespace-pre-wrap">{session.notes}</p>
+                        <p className="text-gray-600 whitespace-pre-wrap">
+                          {session.notes}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -213,15 +255,27 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
               <CardContent className="space-y-3">
                 {interview.status === "scheduled" && (
                   <Button asChild className="w-full">
-                    <Link href={`/interview/${interview.room_id}`}>Join Interview Room</Link>
+                    <Link href={`/interview/${interview.room_id}`}>
+                      Join Interview Room
+                    </Link>
                   </Button>
                 )}
-                <Button variant="outline" asChild className="w-full bg-transparent">
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full bg-transparent"
+                >
                   <Link href="/dashboard/interviews">View All Interviews</Link>
                 </Button>
                 {interview.interviewer_id === data.user.id && (
-                  <Button variant="outline" asChild className="w-full bg-transparent">
-                    <Link href={`/dashboard/interviews/${interview.id}/edit`}>Edit Interview</Link>
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full bg-transparent"
+                  >
+                    <Link href={`/dashboard/interviews/${interview.id}/edit`}>
+                      Edit Interview
+                    </Link>
                   </Button>
                 )}
               </CardContent>
@@ -232,16 +286,21 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
               <Card>
                 <CardHeader>
                   <CardTitle>Chat History</CardTitle>
-                  <CardDescription>{chatMessages.length} messages</CardDescription>
+                  <CardDescription>
+                    {chatMessages.length} messages
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {chatMessages.map((message) => (
                       <div key={message.id} className="text-sm">
                         <div className="font-medium text-xs text-gray-600">
-                          {message.profiles?.full_name || message.profiles?.email}
+                          {message.profiles?.full_name ||
+                            message.profiles?.email}
                         </div>
-                        <div className="mt-1 text-gray-800">{message.message}</div>
+                        <div className="mt-1 text-gray-800">
+                          {message.message}
+                        </div>
                         <div className="text-xs text-gray-500 mt-1">
                           {new Date(message.created_at).toLocaleTimeString()}
                         </div>
@@ -255,5 +314,5 @@ export default async function InterviewDetailPage({ params }: InterviewDetailPag
         </div>
       </main>
     </div>
-  )
+  );
 }

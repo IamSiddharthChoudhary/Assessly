@@ -1,80 +1,84 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Play, Pause, Square, Download, Clock, FileVideo } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Play, Pause, Square, Download, Clock, FileVideo } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface RecordingManagerProps {
-  interviewId: string
-  currentUserId: string
-  isInterviewer: boolean
+  interviewId: string;
+  currentUserId: string;
+  isInterviewer: boolean;
 }
 
-export default function RecordingManager({ interviewId, currentUserId, isInterviewer }: RecordingManagerProps) {
-  const [isRecording, setIsRecording] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const [recordingTime, setRecordingTime] = useState(0)
-  const [recordings, setRecordings] = useState<any[]>([])
-  const [currentRecording, setCurrentRecording] = useState<any>(null)
+export default function RecordingManager({
+  interviewId,
+  currentUserId,
+  isInterviewer,
+}: RecordingManagerProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordings, setRecordings] = useState<any[]>([]);
+  const [currentRecording, setCurrentRecording] = useState<any>(null);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordedChunksRef = useRef<Blob[]>([])
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const supabase = createClient()
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
-    loadRecordings()
+    loadRecordings();
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [])
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const loadRecordings = async () => {
     const { data } = await supabase
       .from("interview_recordings")
       .select("*")
       .eq("interview_id", interviewId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    if (data) setRecordings(data)
-  }
+    if (data) setRecordings(data);
+  };
 
   const startRecording = async () => {
     try {
-      // Get screen and audio streams
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
-        video: { mediaSource: "screen" },
+        video: true,
         audio: true,
-      })
+      });
 
       const audioStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-      })
+      });
 
-      // Combine streams
-      const combinedStream = new MediaStream([...screenStream.getVideoTracks(), ...audioStream.getAudioTracks()])
+      const combinedStream = new MediaStream([
+        ...screenStream.getVideoTracks(),
+        ...audioStream.getAudioTracks(),
+      ]);
 
       mediaRecorderRef.current = new MediaRecorder(combinedStream, {
         mimeType: "video/webm;codecs=vp9",
-      })
+      });
 
-      recordedChunksRef.current = []
+      recordedChunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          recordedChunksRef.current.push(event.data)
+          recordedChunksRef.current.push(event.data);
         }
-      }
+      };
 
       mediaRecorderRef.current.onstop = async () => {
-        await saveRecording()
-      }
+        await saveRecording();
+      };
 
-      // Create recording session in database
       const { data: recordingData } = await supabase
         .from("interview_recordings")
         .insert({
@@ -84,60 +88,62 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
           duration: 0,
         })
         .select()
-        .single()
+        .single();
 
-      setCurrentRecording(recordingData)
-      mediaRecorderRef.current.start(1000) // Record in 1-second chunks
-      setIsRecording(true)
-      setRecordingTime(0)
+      setCurrentRecording(recordingData);
+      mediaRecorderRef.current.start(1000);
+      setIsRecording(true);
+      setRecordingTime(0);
 
-      // Start timer
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1)
-      }, 1000)
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
     } catch (error) {
-      console.error("Error starting recording:", error)
+      console.error("Error starting recording:", error);
     }
-  }
+  };
 
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       if (isPaused) {
-        mediaRecorderRef.current.resume()
+        mediaRecorderRef.current.resume();
         timerRef.current = setInterval(() => {
-          setRecordingTime((prev) => prev + 1)
-        }, 1000)
+          setRecordingTime((prev) => prev + 1);
+        }, 1000);
       } else {
-        mediaRecorderRef.current.pause()
-        if (timerRef.current) clearInterval(timerRef.current)
+        mediaRecorderRef.current.pause();
+        if (timerRef.current) clearInterval(timerRef.current);
       }
-      setIsPaused(!isPaused)
+      setIsPaused(!isPaused);
     }
-  }
+  };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      if (timerRef.current) clearInterval(timerRef.current)
-      setIsRecording(false)
-      setIsPaused(false)
+      mediaRecorderRef.current.stop();
+      if (timerRef.current) clearInterval(timerRef.current);
+      setIsRecording(false);
+      setIsPaused(false);
 
-      // Stop all tracks
-      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop())
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
     }
-  }
+  };
 
   const saveRecording = async () => {
-    if (recordedChunksRef.current.length === 0 || !currentRecording) return
+    if (recordedChunksRef.current.length === 0 || !currentRecording) return;
 
-    const blob = new Blob(recordedChunksRef.current, { type: "video/webm" })
-    const formData = new FormData()
-    formData.append("file", blob, `interview-${interviewId}-${Date.now()}.webm`)
+    const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+    const formData = new FormData();
+    formData.append(
+      "file",
+      blob,
+      `interview-${interviewId}-${Date.now()}.webm`
+    );
 
     try {
-      // In a real implementation, you would upload to a storage service
-      // For now, we'll simulate the upload and store metadata
-      const recordingUrl = `recordings/interview-${interviewId}-${Date.now()}.webm`
+      const recordingUrl = `recordings/interview-${interviewId}-${Date.now()}.webm`;
 
       await supabase
         .from("interview_recordings")
@@ -147,40 +153,43 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
           file_url: recordingUrl,
           file_size: blob.size,
         })
-        .eq("id", currentRecording.id)
+        .eq("id", currentRecording.id);
 
-      setCurrentRecording(null)
-      loadRecordings()
+      setCurrentRecording(null);
+      loadRecordings();
     } catch (error) {
-      console.error("Error saving recording:", error)
+      console.error("Error saving recording:", error);
     }
-  }
+  };
 
   const downloadRecording = (recording: any) => {
-    // In a real implementation, this would download from storage
-    console.log("Downloading recording:", recording.file_url)
-  }
+    console.log("Downloading recording:", recording.file_url);
+  };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const formatFileSize = (bytes: number) => {
-    const mb = bytes / (1024 * 1024)
-    return `${mb.toFixed(1)} MB`
-  }
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
+  };
 
   return (
     <div className="space-y-4">
-      {/* Recording Controls */}
       {isInterviewer && (
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">Session Recording</h3>
             {isRecording && (
-              <Badge variant={isPaused ? "secondary" : "destructive"} className="animate-pulse">
+              <Badge
+                variant={isPaused ? "secondary" : "destructive"}
+                className="animate-pulse"
+              >
                 {isPaused ? "PAUSED" : "RECORDING"}
               </Badge>
             )}
@@ -188,14 +197,21 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
 
           <div className="flex items-center gap-3">
             {!isRecording ? (
-              <Button onClick={startRecording} className="bg-red-600 hover:bg-red-700">
+              <Button
+                onClick={startRecording}
+                className="bg-red-600 hover:bg-red-700"
+              >
                 <FileVideo className="w-4 h-4 mr-2" />
                 Start Recording
               </Button>
             ) : (
               <>
                 <Button onClick={pauseRecording} variant="outline">
-                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                  {isPaused ? (
+                    <Play className="w-4 h-4" />
+                  ) : (
+                    <Pause className="w-4 h-4" />
+                  )}
                 </Button>
                 <Button onClick={stopRecording} variant="destructive">
                   <Square className="w-4 h-4" />
@@ -213,14 +229,18 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
 
           {isRecording && (
             <div className="mt-3">
-              <div className="text-xs text-gray-600 mb-1">Recording in progress...</div>
-              <Progress value={(recordingTime % 60) * (100 / 60)} className="h-1" />
+              <div className="text-xs text-gray-600 mb-1">
+                Recording in progress...
+              </div>
+              <Progress
+                value={(recordingTime % 60) * (100 / 60)}
+                className="h-1"
+              />
             </div>
           )}
         </Card>
       )}
 
-      {/* Recordings List */}
       <Card className="p-4">
         <h3 className="font-medium mb-4">Session Recordings</h3>
 
@@ -232,26 +252,46 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
         ) : (
           <div className="space-y-3">
             {recordings.map((recording) => (
-              <div key={recording.id} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={recording.id}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <FileVideo className="w-4 h-4" />
                     <span className="font-medium text-sm">
-                      Recording {new Date(recording.created_at).toLocaleDateString()}
+                      Recording{" "}
+                      {new Date(recording.created_at).toLocaleDateString()}
                     </span>
-                    <Badge variant={recording.status === "completed" ? "secondary" : "outline"} className="text-xs">
+                    <Badge
+                      variant={
+                        recording.status === "completed"
+                          ? "secondary"
+                          : "outline"
+                      }
+                      className="text-xs"
+                    >
                       {recording.status}
                     </Badge>
                   </div>
                   <div className="text-xs text-gray-600 space-x-4">
                     <span>Duration: {formatTime(recording.duration || 0)}</span>
-                    {recording.file_size && <span>Size: {formatFileSize(recording.file_size)}</span>}
-                    <span>Created: {new Date(recording.created_at).toLocaleTimeString()}</span>
+                    {recording.file_size && (
+                      <span>Size: {formatFileSize(recording.file_size)}</span>
+                    )}
+                    <span>
+                      Created:{" "}
+                      {new Date(recording.created_at).toLocaleTimeString()}
+                    </span>
                   </div>
                 </div>
 
                 {recording.status === "completed" && (
-                  <Button onClick={() => downloadRecording(recording)} variant="outline" size="sm">
+                  <Button
+                    onClick={() => downloadRecording(recording)}
+                    variant="outline"
+                    size="sm"
+                  >
                     <Download className="w-4 h-4" />
                   </Button>
                 )}
@@ -261,5 +301,5 @@ export default function RecordingManager({ interviewId, currentUserId, isIntervi
         )}
       </Card>
     </div>
-  )
+  );
 }

@@ -1,44 +1,46 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import InterviewRoom from "@/components/interview-room"
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import InterviewRoom from "@/components/interview-room";
 
 interface InterviewPageProps {
-  params: {
-    roomId: string
-  }
+  params: Promise<{
+    roomId: string;
+  }>;
 }
 
 export default async function InterviewPage({ params }: InterviewPageProps) {
-  const supabase = await createClient()
+  const { roomId } = await params;
+  const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.getUser()
+  const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) {
-    redirect("/auth/login")
+    redirect("/auth/login");
   }
 
-  // Get interview details
-  const { data: interview } = await supabase.from("interviews").select("*").eq("room_id", params.roomId).single()
+  const { data: interview } = await supabase
+    .from("interviews")
+    .select("*")
+    .eq("room_id", roomId)
+    .single();
 
   if (!interview) {
-    redirect("/dashboard")
+    redirect("/dashboard");
   }
 
-  // Check if user is authorized for this interview
   const isAuthorized =
     interview.interviewer_id === data.user.id ||
     interview.candidate_id === data.user.id ||
-    interview.candidate_id === null // Open room
+    interview.candidate_id === null;
 
   if (!isAuthorized) {
-    redirect("/dashboard")
+    redirect("/dashboard");
   }
 
-  // Get or create interview session
   let { data: session } = await supabase
     .from("interview_sessions")
     .select("*")
     .eq("interview_id", interview.id)
-    .single()
+    .single();
 
   if (!session) {
     const { data: newSession } = await supabase
@@ -50,10 +52,16 @@ export default async function InterviewPage({ params }: InterviewPageProps) {
         language: "javascript",
       })
       .select()
-      .single()
+      .single();
 
-    session = newSession
+    session = newSession;
   }
 
-  return <InterviewRoom interview={interview} session={session} currentUserId={data.user.id} />
+  return (
+    <InterviewRoom
+      interview={interview}
+      session={session}
+      currentUserId={data.user.id}
+    />
+  );
 }
