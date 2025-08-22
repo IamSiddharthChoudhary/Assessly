@@ -1,103 +1,220 @@
-import Image from "next/image";
+"use client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import ShaderBg from "@/components/shaderBg";
+import Navbar from "@/components/navbar";
+import FeatureComparison from "@/components/featureComparison";
+import StatsSection from "@/components/statsSection";
+import {
+  ArrowRight,
+  Github,
+  Linkedin,
+  Mail,
+  Phone,
+  MapPin,
+  Twitter,
+} from "lucide-react";
+import FeatureCards from "@/components/featureCard";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function Home() {
+export default function HomePage() {
+  const [shaderIndex, setShaderIndex] = useState(0);
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const maxScroll = document.body.scrollHeight - window.innerHeight;
+
+      const numSections = 5;
+      const section = Math.min(
+        numSections - 1,
+        Math.floor((scrollY / maxScroll) * numSections)
+      );
+
+      setShaderIndex(section);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-black sensation-regular w-full">
+      <ShaderBg index={shaderIndex} />
+      <div className="relative overflow-hidden flex flex-col justify-center">
+        <Navbar />
+        <div className="relative container mx-auto py-24 w-screen sansation-bold">
+          <div className="text-center w-full mx-auto">
+            <h1 className="text-7xl font-bold text-white mb-6 leading-tight">
+              Conduct{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-500 to-purple-500">
+                Technical Interviews
+              </span>{" "}
+              <span className="major-mono-display-regular">fluidly</span>,
+              without friction.
+            </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+              Conduct seamless coding interviews with real-time collaboration,
+              HD video calls, and comprehensive assessment tools. Make better
+              hiring decisions faster.
+            </p>
+            <div className="inline-block rounded-3xl m-6 mt-0 p-[3px] bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500">
+              <Button
+                className="rounded-3xl bg-black text-white text-lg font-semibold px-8 py-3
+               hover:bg-gradient-to-r hover:from-pink-500 via-purple-500 to-blue-500
+               duration-300 ease-in-out hover:scale-110 transition-transform"
+              >
+                <Link href="/auth/sign-up">Get Started</Link>
+              </Button>
+            </div>
+
+            <div className="flex flex-col justify-center z-10 rounded-2xl overflow-hidden">
+              <img
+                src="/pv.png"
+                className="rounded-3xl mx-auto w-[70vw]"
+                alt=""
+              />
+            </div>
+          </div>
+          <div className="container mx-auto px-6 py-20">
+            <div
+              className={`transition-all duration-1000 delay-300 ${
+                true ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              <StatsSection />
+            </div>
+          </div>
+          <div className="container mx-auto px-6 py-20">
+            <div
+              className={`transition-all duration-1000 delay-500 ${
+                true ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                  Why Assessly Beats Generic Video Tools
+                </h2>
+                <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+                  While Zoom and Google Meet are great for meetings, technical
+                  interviews need specialized tools. Assessly provides
+                  everything you need in one seamless platform.
+                </p>
+              </div>
+              <FeatureComparison />
+            </div>
+          </div>
+          <div className="container mx-auto px-6 py-20">
+            <div
+              className={`transition-all duration-1000 delay-700 ${
+                true ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-green-100">
+                  Complete Technical Interview{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-400">
+                    Ecosystem
+                  </span>
+                </h2>
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                  Every feature purpose-built for evaluating programming skills
+                  and making better hiring decisions.
+                </p>
+              </div>
+              <FeatureCards />
+            </div>
+          </div>
+          <div className="container mx-auto px-6 py-20 mb-0 pb-0">
+            <div
+              className={`transition-all duration-1000 delay-900 ${
+                true ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+              }`}
+            >
+              <div className="text-center bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-3xl p-12 border border-white/10 backdrop-blur-sm">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6 text-amber-50">
+                  Ready to Transform Your{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                    Technical Hiring?
+                  </span>
+                </h2>
+                <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+                  Join companies that have moved beyond generic video tools to
+                  purpose-built technical interview solutions.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                  <Button
+                    size="lg"
+                    className="text-lg px-10 py-6 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-yellow-500/25 text-black font-bold"
+                  >
+                    <Link href="/auth/sign-up">Start Free</Link>
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Footer */}
+        <footer className="relative bg-black/50 backdrop-blur-sm border-t border-white/10 flex justify-center">
+          <div className="container mx-auto px-6 py-16">
+            <div className="flex justify-center">
+              <div className="lg:col-span-1">
+                <h3 className="text-2xl font-bold text-white mb-4 major-mono-display-regular">
+                  Assessly
+                </h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  The future of technical interviews. Streamlined, powerful, and
+                  purpose-built for engineering teams.
+                </p>
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 hover:bg-white/10 transition-colors"
+                    onClick={() =>
+                      router.push("https://github.com/IamSiddharthChoudhary")
+                    }
+                  >
+                    <Github className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 hover:bg-white/10 transition-colors"
+                    onClick={() =>
+                      router.push(
+                        "hhttps://www.linkedin.com/in/siddharth-choudhary-a5a0a8229/"
+                      )
+                    }
+                  >
+                    <Linkedin className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 hover:bg-white/10 transition-colors"
+                    onClick={() => router.push("https://x.com/csiddharth380")}
+                  >
+                    <Twitter className="w-5 h-5 text-gray-400 hover:text-white transition-colors" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
